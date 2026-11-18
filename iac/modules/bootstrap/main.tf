@@ -61,8 +61,9 @@ resource "helm_release" "root_application" {
           helm = {
             valueFiles = ["../clusters/${var.root_application.cluster}/components.yaml"]
             valuesObject = {
-              repoURL  = var.root_application.repo_url
-              revision = var.root_application.revision
+              repoURL    = var.root_application.repo_url
+              revision   = var.root_application.revision
+              appRepoURL = var.root_application.app_repo_url
             }
           }
         }

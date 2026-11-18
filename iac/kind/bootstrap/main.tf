@@ -34,8 +34,9 @@ module "bootstrap" {
   }
 
   root_application = {
-    repo_url = "https://github.com/${var.github_owner}/platform-infra.git"
-    revision = var.git_revision
-    cluster  = "kind"
+    repo_url     = "https://github.com/${var.github_owner}/platform-infra.git"
+    revision     = var.git_revision
+    cluster      = "kind"
+    app_repo_url = "https://github.com/${var.github_owner}/demo-apps.git"
   }
 }

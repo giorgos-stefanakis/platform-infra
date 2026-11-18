@@ -18,10 +18,11 @@ variable "git_credentials" {
 }
 
 variable "root_application" {
-  description = "Repository and revision of the root Application, and the cluster whose component list it renders."
+  description = "Repository and revision of the root Application, the cluster whose component list it renders, and the repository of the application chart."
   type = object({
-    repo_url = string
-    revision = string
-    cluster  = string
+    repo_url     = string
+    revision     = string
+    cluster      = string
+    app_repo_url = string
   })
 }

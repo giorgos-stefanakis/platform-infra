@@ -1,0 +1,32 @@
+image:
+  repository: crdemo0bqqwr.azurecr.io/demo-app
+  tag: c550012
+
+auth:
+  tenantId: 9e0b74a8-2a7c-43ae-8b92-e05e1e520a7f
+  clientId: e7ac1a8f-7786-4da3-b9e4-80429308dfe1
+  apiAudience: api://e7ac1a8f-7786-4da3-b9e4-80429308dfe1
+
+routing:
+  type: ingress
+  hostname: cluster.gstefan.net
+  ingress:
+    className: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+    tlsSecretName: demo-tls
+
+storageClassName: managed-csi
+
+objectStore:
+  type: azureblob
+  azureblob:
+    accountUrl: https://stdemo0bqqwr.blob.core.windows.net/
+    container: uploads
+
+secretStore:
+  kind: ClusterSecretStore
+  name: azure-key-vault
+
+workloadIdentity:
+  clientId: c392df4f-1b34-409b-b979-c8c8dd61c2ad

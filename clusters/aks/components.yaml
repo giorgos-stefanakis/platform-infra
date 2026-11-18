@@ -1,0 +1,10 @@
+# Infrastructure comes from the client: AKS itself and the components in client/.
+cluster: aks
+
+components:
+  # Application platform
+  - external-secrets
+  - cloudnative-pg
+  - rabbitmq-operator
+  # Application stack
+  - demo-app

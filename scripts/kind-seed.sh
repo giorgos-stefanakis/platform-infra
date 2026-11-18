@@ -26,7 +26,7 @@ wait_for_vault_pod() {
 
 vault_status() {
   # Exit code 2 means sealed; the JSON is still valid.
-  vault_exec status -format=json || true
+  vault_exec status -format=json 2>/dev/null || true
 }
 
 initialise() {
@@ -91,6 +91,7 @@ EOF
 vault_exec write auth/kubernetes/role/external-secrets \
   bound_service_account_names=external-secrets \
   bound_service_account_namespaces=external-secrets \
+  audience=vault \
   policies=external-secrets \
   ttl=1h >/dev/null
 

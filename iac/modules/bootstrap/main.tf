@@ -2,6 +2,31 @@ locals {
   argocd_namespace          = "argocd"
   argocd_chart_version      = "10.18.1"
   argocd_apps_chart_version = "2.0.8"
+
+  components_source = {
+    repoURL        = var.root_application.repo_url
+    targetRevision = var.root_application.revision
+    path           = "components"
+    helm = {
+      valueFiles = ["../clusters/${var.root_application.cluster}/components.yaml"]
+      valuesObject = {
+        repoURL    = var.root_application.repo_url
+        revision   = var.root_application.revision
+        appRepoURL = var.root_application.app_repo_url
+      }
+    }
+  }
+
+  # Infrastructure that a client cluster brings itself, kept apart from our components.
+  client_sources = [
+    for path in compact([var.root_application.client_path]) : {
+      repoURL        = var.root_application.repo_url
+      targetRevision = var.root_application.revision
+      path           = path
+    }
+  ]
+
+  root_sources = concat([local.components_source], local.client_sources)
 }
 
 resource "helm_release" "cilium" {
@@ -54,19 +79,7 @@ resource "helm_release" "root_application" {
       root = {
         namespace = local.argocd_namespace
         project   = "default"
-        source = {
-          repoURL        = var.root_application.repo_url
-          targetRevision = var.root_application.revision
-          path           = "components"
-          helm = {
-            valueFiles = ["../clusters/${var.root_application.cluster}/components.yaml"]
-            valuesObject = {
-              repoURL    = var.root_application.repo_url
-              revision   = var.root_application.revision
-              appRepoURL = var.root_application.app_repo_url
-            }
-          }
-        }
+        sources   = local.root_sources
         destination = {
           server    = "https://kubernetes.default.svc"
           namespace = local.argocd_namespace

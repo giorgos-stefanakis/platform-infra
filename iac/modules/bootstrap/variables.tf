@@ -18,11 +18,15 @@ variable "git_credentials" {
 }
 
 variable "root_application" {
-  description = "Repository and revision of the root Application, the cluster whose component list it renders, and the repository of the application chart."
+  description = <<-EOT
+    Repository and revision of the root Application, the cluster whose component list it renders, the repository of
+    the application chart, and an optional directory of infrastructure the client cluster brings itself.
+  EOT
   type = object({
     repo_url     = string
     revision     = string
     cluster      = string
     app_repo_url = string
+    client_path  = optional(string)
   })
 }

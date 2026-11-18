@@ -1,0 +1,10 @@
+{{- $_ := required "cluster is required" .Values.cluster }}
+{{- range .Values.components }}
+{{- $file := printf "%s/application.yaml" . }}
+{{- $manifest := $.Files.Get $file }}
+{{- if not $manifest }}
+{{- fail (printf "component %s has no %s" . $file) }}
+{{- end }}
+---
+{{ tpl $manifest $ }}
+{{- end }}

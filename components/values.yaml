@@ -1,0 +1,7 @@
+# Set by the root Application.
+repoURL: ""
+revision: ""
+
+# Set by clusters/<cluster>/components.yaml.
+cluster: ""
+components: []

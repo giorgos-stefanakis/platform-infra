@@ -1,0 +1,5 @@
+# The operator ships no Helm chart; its release manifest is the upstream install method.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/rabbitmq/cluster-operator/releases/download/v2.23.3/cluster-operator.yml

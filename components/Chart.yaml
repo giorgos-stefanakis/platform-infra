@@ -1,0 +1,5 @@
+apiVersion: v2
+name: components
+description: Renders one Argo CD Application per component that a cluster lists.
+type: application
+version: 0.1.0

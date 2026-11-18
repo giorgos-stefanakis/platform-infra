@@ -1,0 +1,13 @@
+cluster: kind
+
+components:
+  # Infrastructure
+  - openebs
+  - envoy-gateway
+  - cert-manager
+  - vault
+  - seaweedfs
+  # Application platform
+  - external-secrets
+  - cloudnative-pg
+  - rabbitmq-operator

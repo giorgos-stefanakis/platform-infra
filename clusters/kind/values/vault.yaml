@@ -1,0 +1,9 @@
+injector:
+  enabled: false
+
+server:
+  standalone:
+    enabled: true
+  dataStorage:
+    size: 1Gi
+    storageClass: openebs-hostpath

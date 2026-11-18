@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: openebs
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openebs
+  sources:
+    - repoURL: https://openebs.github.io/dynamic-localpv-provisioner
+      chart: localpv-provisioner
+      targetRevision: 4.6.0
+      helm:
+        valueFiles:
+          - $values/clusters/{{ .Values.cluster }}/values/openebs.yaml
+        ignoreMissingValueFiles: true
+    - repoURL: {{ .Values.repoURL }}
+      targetRevision: {{ .Values.revision }}
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

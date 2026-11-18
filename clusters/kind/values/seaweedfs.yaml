@@ -1,0 +1,23 @@
+master:
+  enabled: false
+volume:
+  enabled: false
+filer:
+  enabled: false
+
+allInOne:
+  enabled: true
+  s3:
+    enabled: true
+    enableAuth: true
+    createBuckets:
+      - name: uploads
+  data:
+    type: persistentVolumeClaim
+    size: 5Gi
+    storageClass: openebs-hostpath
+
+s3:
+  credentials:
+    admin:
+      existingSecret: seaweedfs-s3-credentials

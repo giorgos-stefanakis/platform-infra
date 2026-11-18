@@ -1,6 +1,7 @@
 # Set by the root Application.
 repoURL: ""
 revision: ""
+appRepoURL: ""
 
 # Set by clusters/<cluster>/components.yaml.
 cluster: ""

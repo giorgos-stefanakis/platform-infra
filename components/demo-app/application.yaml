@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app
+  namespace: argocd
+  annotations:
+    # Needs the operators, the secret store and the object store.
+    argocd.argoproj.io/sync-wave: "4"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo
+  sources:
+    - repoURL: {{ .Values.appRepoURL }}
+      targetRevision: main
+      path: chart
+      helm:
+        valueFiles:
+          - $values/clusters/{{ .Values.cluster }}/values/demo-app.yaml
+    - repoURL: {{ .Values.repoURL }}
+      targetRevision: {{ .Values.revision }}
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

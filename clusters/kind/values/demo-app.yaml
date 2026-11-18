@@ -1,0 +1,30 @@
+image:
+  repository: demo-app
+  tag: c550012
+
+auth:
+  tenantId: 00000000-0000-0000-0000-000000000000
+  clientId: 00000000-0000-0000-0000-000000000000
+  apiAudience: api://00000000-0000-0000-0000-000000000000
+
+routing:
+  type: gateway-api
+  hostname: localhost
+  gatewayApi:
+    parentRef:
+      name: public
+      namespace: envoy-gateway-system
+      sectionName: http
+
+storageClassName: openebs-hostpath
+
+objectStore:
+  type: s3
+  s3:
+    endpoint: http://seaweedfs-all-in-one.seaweedfs.svc:8333
+    bucket: uploads
+
+secretStore:
+  kind: ClusterSecretStore
+  name: vault
+  property: value

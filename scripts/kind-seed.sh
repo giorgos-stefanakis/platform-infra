@@ -96,6 +96,6 @@ vault_exec write auth/kubernetes/role/external-secrets \
   ttl=1h >/dev/null
 
 put_if_missing demo-api-key value="$(openssl rand -hex 24)"
-put_if_missing seaweedfs access_key_id="$(openssl rand -hex 10)" secret_access_key="$(openssl rand -hex 20)"
+put_if_missing object-store access_key_id="$(openssl rand -hex 10)" secret_access_key="$(openssl rand -hex 20)"
 
 echo "Vault is ready"

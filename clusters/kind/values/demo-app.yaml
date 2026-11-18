@@ -1,11 +1,11 @@
 image:
-  repository: demo-app
+  repository: crdemo0bqqwr.azurecr.io/demo-app
   tag: c550012
 
 auth:
-  tenantId: 00000000-0000-0000-0000-000000000000
-  clientId: 00000000-0000-0000-0000-000000000000
-  apiAudience: api://00000000-0000-0000-0000-000000000000
+  tenantId: 9e0b74a8-2a7c-43ae-8b92-e05e1e520a7f
+  clientId: e7ac1a8f-7786-4da3-b9e4-80429308dfe1
+  apiAudience: api://e7ac1a8f-7786-4da3-b9e4-80429308dfe1
 
 routing:
   type: gateway-api

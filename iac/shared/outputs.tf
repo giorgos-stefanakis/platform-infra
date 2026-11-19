@@ -18,6 +18,17 @@ output "acr_login_server" {
   value       = azurerm_container_registry.demo.login_server
 }
 
+output "acr_pull_username" {
+  description = "User name of the read-only registry token, for clusters outside Azure."
+  value       = azurerm_container_registry_token.pull.name
+}
+
+output "acr_pull_password" {
+  description = "Password of the read-only registry token. `make kind-seed` writes it to Vault."
+  value       = azurerm_container_registry_token_password.pull.password1[0].value
+  sensitive   = true
+}
+
 output "app_identity_id" {
   description = "Resource ID of the app pods' managed identity."
   value       = azurerm_user_assigned_identity.app.id

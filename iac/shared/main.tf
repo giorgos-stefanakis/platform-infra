@@ -34,6 +34,27 @@ resource "azurerm_container_registry" "demo" {
   admin_enabled       = false
 }
 
+# Clusters outside Azure pull the image with this token. It can only read the demo-app repository.
+resource "azurerm_container_registry_scope_map" "pull" {
+  name                    = "demo-app-pull"
+  container_registry_name = azurerm_container_registry.demo.name
+  resource_group_name     = azurerm_resource_group.shared.name
+  actions                 = ["repositories/demo-app/content/read"]
+}
+
+resource "azurerm_container_registry_token" "pull" {
+  name                    = "demo-app-pull"
+  container_registry_name = azurerm_container_registry.demo.name
+  resource_group_name     = azurerm_resource_group.shared.name
+  scope_map_id            = azurerm_container_registry_scope_map.pull.id
+}
+
+resource "azurerm_container_registry_token_password" "pull" {
+  container_registry_token_id = azurerm_container_registry_token.pull.id
+
+  password1 {}
+}
+
 resource "azurerm_user_assigned_identity" "app" {
   name                = "id-demo-app"
   resource_group_name = azurerm_resource_group.shared.name

@@ -95,5 +95,7 @@ itself; here they stand in for the client's stack.
 ### Lint
 
 ```sh
-make lint   # terraform fmt, validate and tflint
+make lint   # terraform fmt, validate and tflint; helm lint of the components for each cluster
 ```
+
+CI runs `make lint` on every push to `main` and on pull requests.

@@ -20,6 +20,13 @@ spec:
       valuesObject:
         crds:
           enabled: true
+  # AKS adds its own namespace selector terms to admission webhooks.
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: cert-manager-webhook
+      jqPathExpressions:
+        - .webhooks[].namespaceSelector
   syncPolicy:
     automated:
       prune: true
@@ -27,3 +34,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true

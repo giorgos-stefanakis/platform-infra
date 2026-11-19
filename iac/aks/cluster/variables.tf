@@ -17,7 +17,7 @@ variable "state_storage_account_name" {
 variable "node_vm_size" {
   description = "VM size of the single node."
   type        = string
-  default     = "Standard_B4ms"
+  default     = "Standard_D2s_v5"
 }
 
 variable "monthly_budget" {

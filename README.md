@@ -51,6 +51,13 @@ secrets wait until `kind-seed` has run. Run `kind-seed` again after the cluster 
 
 The unseal key and root token are kept in the `vault-init` Secret in the cluster. This is for the demo only.
 
+After a restart, the ExternalSecrets can stay in `SecretSyncedError` even once Vault is unsealed. Restart the
+controller to retry at once:
+
+```sh
+kubectl --context kind-demo -n external-secrets rollout restart deploy/external-secrets
+```
+
 ### Azure
 
 Sign in with `az login` to the right tenant. Terraform uses that session. Copy `.env.example` to `.env` and fill it

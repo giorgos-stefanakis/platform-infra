@@ -2,6 +2,9 @@ image:
   repository: crdemo0bqqwr.azurecr.io/demo-app
   tag: c550012
 
+imagePullSecrets:
+  - name: registry-pull
+
 auth:
   tenantId: 9e0b74a8-2a7c-43ae-8b92-e05e1e520a7f
   clientId: e7ac1a8f-7786-4da3-b9e4-80429308dfe1

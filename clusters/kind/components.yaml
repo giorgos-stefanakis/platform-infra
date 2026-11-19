@@ -11,5 +11,6 @@ components:
   - external-secrets
   - cloudnative-pg
   - rabbitmq-operator
+  - registry-pull
   # Application stack
   - demo-app

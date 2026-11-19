@@ -51,6 +51,10 @@ secrets wait until `kind-seed` has run. Run `kind-seed` again after the cluster 
 
 The unseal key and root token are kept in the `vault-init` Secret in the cluster. This is for the demo only.
 
+The image is in the private registry. `iac/shared` creates a read-only pull token. `kind-seed` reads it from the
+Terraform outputs, so run `shared-up` first. It writes the token to Vault, and the `registry-pull` component turns it
+into the `registry-pull` image pull secret. AKS needs no such secret: the cluster identity can pull from the registry.
+
 After a restart, the ExternalSecrets can stay in `SecretSyncedError` even once Vault is unsealed. Restart the
 controller to retry at once:
 

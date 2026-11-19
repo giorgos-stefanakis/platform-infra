@@ -1,0 +1,31 @@
+# Pull credentials for the private registry. Clusters that can already pull the image do not use this component.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: registry-pull
+  namespace: demo
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault
+  target:
+    name: registry-pull
+    template:
+      type: kubernetes.io/dockerconfigjson
+      data:
+        .dockerconfigjson: |
+          {"auths":{"{{ .server }}":{"username":"{{ .username }}","password":"{{ .password }}"}}}
+  data:
+    - secretKey: server
+      remoteRef:
+        key: registry-pull
+        property: server
+    - secretKey: username
+      remoteRef:
+        key: registry-pull
+        property: username
+    - secretKey: password
+      remoteRef:
+        key: registry-pull
+        property: password

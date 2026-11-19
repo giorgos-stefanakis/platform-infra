@@ -44,6 +44,9 @@ kind-up:
 	$(GIT_TOKEN_ENV) terraform -chdir=$(KIND_BOOTSTRAP_DIR) $(TF_APPLY)
 
 kind-seed:
+	REGISTRY_SERVER="$$(terraform -chdir=$(SHARED_DIR) output -raw acr_login_server)" \
+	REGISTRY_PULL_USERNAME="$$(terraform -chdir=$(SHARED_DIR) output -raw acr_pull_username)" \
+	REGISTRY_PULL_PASSWORD="$$(terraform -chdir=$(SHARED_DIR) output -raw acr_pull_password)" \
 	scripts/kind-seed.sh
 
 kind-down:

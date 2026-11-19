@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Initialises and unseals Vault on the kind cluster, lets External Secrets Operator read it, and writes generated
 # secret values. Safe to run again: it unseals after a restart and keeps existing values.
+# REGISTRY_SERVER, REGISTRY_PULL_USERNAME and REGISTRY_PULL_PASSWORD, when set, are written as the registry pull
+# credentials.
 set -euo pipefail
 
 context="${KUBE_CONTEXT:-kind-demo}"
@@ -97,5 +99,11 @@ vault_exec write auth/kubernetes/role/external-secrets \
 
 put_if_missing demo-api-key value="$(openssl rand -hex 24)"
 put_if_missing object-store access_key_id="$(openssl rand -hex 10)" secret_access_key="$(openssl rand -hex 20)"
+
+if [[ -n "${REGISTRY_SERVER:-}" && -n "${REGISTRY_PULL_USERNAME:-}" && -n "${REGISTRY_PULL_PASSWORD:-}" ]]; then
+  vault_exec kv put secret/registry-pull \
+    server="$REGISTRY_SERVER" username="$REGISTRY_PULL_USERNAME" password="$REGISTRY_PULL_PASSWORD" >/dev/null
+  echo "Wrote secret/registry-pull"
+fi
 
 echo "Vault is ready"

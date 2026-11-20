@@ -26,10 +26,27 @@ resource "kind_cluster" "this" {
     node {
       role = "control-plane"
 
+      # kind taints the control plane once workers exist; three schedulable nodes let replicas spread.
+      kubeadm_config_patches = [
+        <<-EOT
+        kind: InitConfiguration
+        nodeRegistration:
+          taints: []
+        EOT
+      ]
+
       extra_port_mappings {
         container_port = local.gateway_node_port
         host_port      = 80
       }
+    }
+
+    node {
+      role = "worker"
+    }
+
+    node {
+      role = "worker"
     }
   }
 }

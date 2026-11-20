@@ -99,6 +99,7 @@ vault_exec write auth/kubernetes/role/external-secrets \
 
 put_if_missing demo-api-key value="$(openssl rand -hex 24)"
 put_if_missing object-store access_key_id="$(openssl rand -hex 10)" secret_access_key="$(openssl rand -hex 20)"
+put_if_missing object-store-admin username=admin password="$(openssl rand -hex 16)"
 
 if [[ -n "${REGISTRY_SERVER:-}" && -n "${REGISTRY_PULL_USERNAME:-}" && -n "${REGISTRY_PULL_PASSWORD:-}" ]]; then
   vault_exec kv put secret/registry-pull \

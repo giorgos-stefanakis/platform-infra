@@ -1,0 +1,36 @@
+# The chart has no PodDisruptionBudgets; a drain must not take two replicas at once.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: seaweedfs-master
+  namespace: seaweedfs
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: seaweedfs
+      app.kubernetes.io/component: master
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: seaweedfs-volume
+  namespace: seaweedfs
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: seaweedfs
+      app.kubernetes.io/component: volume
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: seaweedfs-filer
+  namespace: seaweedfs
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: seaweedfs
+      app.kubernetes.io/component: filer

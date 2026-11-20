@@ -1,0 +1,20 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: seaweedfs-db
+  namespace: seaweedfs
+  annotations:
+    # The filers need their metadata store at start.
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  instances: 2
+  bootstrap:
+    initdb:
+      database: seaweedfs
+      owner: seaweedfs
+  storage:
+    size: 1Gi
+    storageClass: openebs-hostpath
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}

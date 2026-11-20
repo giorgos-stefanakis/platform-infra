@@ -24,7 +24,7 @@ storageClassName: openebs-hostpath
 objectStore:
   type: s3
   s3:
-    endpoint: http://seaweedfs-all-in-one.seaweedfs.svc:8333
+    endpoint: http://seaweedfs-s3.seaweedfs.svc:8333
     bucket: uploads
 
 secretStore:

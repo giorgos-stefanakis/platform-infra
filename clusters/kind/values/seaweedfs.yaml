@@ -1,23 +1,94 @@
 master:
-  enabled: false
-volume:
-  enabled: false
-filer:
-  enabled: false
+  replicas: 3
+  # Two copies of every volume, on different servers.
+  defaultReplication: "001"
+  data:
+    type: persistentVolumeClaim
+    size: 1Gi
+    storageClass: openebs-hostpath
+  logs:
+    type: emptyDir
+  resources:
+    requests: {cpu: 25m, memory: 64Mi}
+    limits: {memory: 256Mi}
 
-allInOne:
-  enabled: true
+volume:
+  replicas: 3
+  dataDirs:
+    - name: data1
+      type: persistentVolumeClaim
+      storageClass: openebs-hostpath
+      size: 5Gi
+      maxVolumes: 0
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}
+
+filer:
+  replicas: 2
+  data:
+    type: emptyDir
+  logs:
+    type: emptyDir
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}
+  # Both filers share the metadata in Postgres, so either can serve any request.
+  extraEnvironmentVars:
+    WEED_LEVELDB2_ENABLED: "false"
+    WEED_POSTGRES2_ENABLED: "true"
+    WEED_POSTGRES2_HOSTNAME: seaweedfs-db-rw.seaweedfs.svc
+    WEED_POSTGRES2_PORT: "5432"
+    WEED_POSTGRES2_DATABASE: seaweedfs
+    WEED_POSTGRES2_SSLMODE: require
+    WEED_POSTGRES2_CREATETABLE: >-
+      CREATE TABLE IF NOT EXISTS "%s" (dirhash BIGINT, name VARCHAR(65535),
+      directory VARCHAR(65535), meta bytea, PRIMARY KEY (dirhash, name));
+    WEED_POSTGRES2_ENABLEUPSERT: "true"
+    WEED_POSTGRES2_UPSERTQUERY: >-
+      INSERT INTO "%[1]s" (dirhash, name, directory, meta) VALUES($1, $2, $3, $4)
+      ON CONFLICT (dirhash, name) DO UPDATE SET directory=EXCLUDED.directory, meta=EXCLUDED.meta
+    WEED_FILER_BUCKETS_FOLDER: /buckets
+  secretExtraEnvironmentVars:
+    WEED_POSTGRES2_USERNAME:
+      secretKeyRef:
+        name: seaweedfs-db-app
+        key: username
+    WEED_POSTGRES2_PASSWORD:
+      secretKeyRef:
+        name: seaweedfs-db-app
+        key: password
   s3:
     enabled: true
     enableAuth: true
     createBuckets:
       - name: uploads
-  data:
-    type: persistentVolumeClaim
-    size: 5Gi
-    storageClass: openebs-hostpath
+        versioning: Enabled
 
 s3:
   credentials:
     admin:
       existingSecret: seaweedfs-s3-credentials
+
+admin:
+  enabled: true
+  secret:
+    existingSecret: seaweedfs-admin
+    userKey: username
+    pwKey: password
+  resources:
+    requests: {cpu: 25m, memory: 64Mi}
+    limits: {memory: 256Mi}
+
+worker:
+  enabled: true
+  resources:
+    requests: {cpu: 25m, memory: 64Mi}
+    limits: {memory: 256Mi}
+
+global:
+  seaweedfs:
+    securityConfig:
+      jwtSigning:
+        # The admin UI needs it to manage S3 users.
+        filerWrite: true

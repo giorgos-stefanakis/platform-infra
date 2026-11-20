@@ -1,7 +1,5 @@
 master:
   replicas: 3
-  # Two copies of every volume, on different servers.
-  defaultReplication: "001"
   data:
     type: persistentVolumeClaim
     size: 1Gi
@@ -88,6 +86,9 @@ worker:
 
 global:
   seaweedfs:
+    # Two copies of every volume, on different servers. Sets both master and filer defaults.
+    enableReplication: true
+    replicationPlacement: "001"
     securityConfig:
       jwtSigning:
         # The admin UI needs it to manage S3 users.

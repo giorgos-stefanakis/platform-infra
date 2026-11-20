@@ -10,6 +10,8 @@ spec:
     kubernetes:
       envoyService:
         type: NodePort
+        # Envoy may run on any node; the host port only reaches the control plane.
+        externalTrafficPolicy: Cluster
         patch:
           type: StrategicMerge
           value:

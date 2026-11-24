@@ -16,6 +16,8 @@ spec:
       labels: {app.kubernetes.io/name: flows-migrate}
     spec:
       restartPolicy: Never
+      # Service links would add FLOWS_API_PORT and similar, which Flows reads as settings and rejects.
+      enableServiceLinks: false
       {{- include "flows.imagePullSecrets" . | nindent 6 }}
       {{- include "flows.podSecurityContext" . | nindent 6 }}
       containers:

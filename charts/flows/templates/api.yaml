@@ -33,6 +33,8 @@ spec:
         {{- include "flows.configChecksum" . | nindent 8 }}
     spec:
       terminationGracePeriodSeconds: 60
+      # Service links would add FLOWS_API_PORT and similar, which Flows reads as settings and rejects.
+      enableServiceLinks: false
       shareProcessNamespace: true
       {{- include "flows.imagePullSecrets" . | nindent 6 }}
       {{- include "flows.podSecurityContext" . | nindent 6 }}

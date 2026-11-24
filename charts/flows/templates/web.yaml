@@ -15,6 +15,7 @@ spec:
         app.kubernetes.io/name: flows-web
         app.kubernetes.io/part-of: flows
     spec:
+      enableServiceLinks: false
       {{- include "flows.imagePullSecrets" . | nindent 6 }}
       securityContext:
         runAsNonRoot: true

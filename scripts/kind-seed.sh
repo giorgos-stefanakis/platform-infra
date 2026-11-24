@@ -89,6 +89,13 @@ path "secret/data/*" {
 path "secret/metadata/*" {
   capabilities = ["read", "list"]
 }
+# Integration credentials are read only by each integration's own SecretStore, never cluster-wide.
+path "secret/data/integrations/*" {
+  capabilities = ["deny"]
+}
+path "secret/metadata/integrations/*" {
+  capabilities = ["deny"]
+}
 EOF
 
 vault_exec write auth/kubernetes/role/external-secrets \
@@ -97,6 +104,24 @@ vault_exec write auth/kubernetes/role/external-secrets \
   audience=vault \
   policies=external-secrets \
   ttl=1h >/dev/null
+
+# integration_access <client> <name>: the namespaced SecretStore of int-<name> reads only
+# integrations/<client>/<name>, as the <name>-vault service account in that namespace.
+integration_access() {
+  local client="$1" name="$2"
+  kube exec -i -n "$namespace" "$pod" -- env VAULT_TOKEN="$root_token" vault policy write "int-$client-$name" - >/dev/null <<EOF
+path "secret/data/integrations/$client/$name" {
+  capabilities = ["read"]
+}
+EOF
+  vault_exec write "auth/kubernetes/role/int-$name" \
+    bound_service_account_names="$name-vault" \
+    bound_service_account_namespaces="int-$name" \
+    audience=vault \
+    policies="int-$client-$name" \
+    ttl=1h >/dev/null
+  echo "Vault role int-$name reads integrations/$client/$name"
+}
 
 case "$profile" in
   demo)
@@ -107,6 +132,9 @@ case "$profile" in
   flows)
     put_if_missing flows/database flows_password="$(openssl rand -hex 24)" jobs_password="$(openssl rand -hex 24)"
     put_if_missing flows/auth secret="$(openssl rand -hex 32)"
+    # Integration erp-adapter-v1 of the client acme: the ERP key exists only here and in its namespace.
+    integration_access acme erp-adapter-v1
+    put_if_missing integrations/acme/erp-adapter-v1 erp_api_key="$(openssl rand -hex 24)"
     ;;
   *)
     echo "Unknown SEED_PROFILE $profile" >&2

@@ -1,0 +1,25 @@
+# Written by the integration's release pipeline into the client's GitOps repository
+# (integrations/<name>.yaml). values.schema.json refuses any other key.
+name: ""
+image: ""
+egress: []
+#  - toNamespace: erp-sim   # or cidr: 203.0.113.0/24
+#    port: 8080
+
+# Set by the platform's ApplicationSet, never by the integration's file: the ApplicationSet's values win.
+platform:
+  # The client: Vault keeps each integration's secrets under integrations/<client>/<name>.
+  client: ""
+  vault:
+    server: http://vault.vault.svc:8200
+    path: secret
+    authMount: kubernetes
+  # Pull secret for a private registry, from Vault (properties server, username, password). Empty: none.
+  imagePullSecretKey: ""
+  # The Flows pods that may call the integration.
+  flows:
+    namespace: flows
+    callers: [flows-automation, flows-api]
+  resources:
+    requests: {cpu: 20m, memory: 64Mi}
+    limits: {memory: 256Mi}

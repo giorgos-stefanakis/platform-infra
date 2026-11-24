@@ -105,6 +105,25 @@ The `flows` chart follows the reference manifests of the Flows guide *Deploying 
 - Sign-in uses local accounts in development mode at `http://localhost`. Guest login does not work in a cluster:
   Flows admits it only from a loopback client address, and the edition entrypoint refuses it.
 
+#### Integrations
+
+The client repository's ApplicationSet renders each `integrations/<name>.yaml` with `charts/flows-integration`.
+The file gives only `name`, `image` (by digest) and `egress`; `values.schema.json` refuses anything else, and the
+ApplicationSet's `platform` settings win over the file. Each integration gets:
+
+- namespace `int-<name>`, created by Argo CD with `flows.satori/integration: "true"` and the `restricted` pod
+  security level;
+- the adapter Deployment (non-root, read-only root filesystem, no service account token) and Service
+  `<name>.int-<name>.svc:8080`;
+- a namespaced SecretStore that authenticates to Vault as `<name>-vault`, and an ExternalSecret that mounts every
+  property of `integrations/<client>/<name>` as a file under `/var/run/secrets/integration`;
+- a NetworkPolicy: ingress only from Flows' `flows-automation` and `flows-api` pods, egress only to DNS and the
+  declared destinations.
+
+`kind-flows-seed` writes the Vault policy and role of each integration (`integration_access` in
+`scripts/kind-seed.sh`) and its generated key. The cluster-wide store's policy denies `integrations/*`, so no
+other namespace, Flows included, can read an integration's credentials.
+
 ### Azure
 
 Sign in with `az login` to the right tenant. Terraform uses that session. Copy `.env.example` to `.env` and fill it

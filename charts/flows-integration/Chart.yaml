@@ -1,0 +1,8 @@
+apiVersion: v2
+name: flows-integration
+description: >-
+  One customer integration service for Flows, a black box to the platform: the adapter Deployment and Service,
+  its secrets from Vault through a namespaced SecretStore, and a NetworkPolicy that admits only Flows and lets the
+  adapter reach only DNS and its declared destinations. Developers give the name, the image digest and the egress.
+type: application
+version: 0.1.0

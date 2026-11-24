@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "A Flows integration service",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "image", "egress", "platform"],
+  "properties": {
+    "name": {
+      "description": "The integration's name with its contract major, for example erp-adapter-v1",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{1,40}-v[0-9]+$"
+    },
+    "image": {
+      "description": "The adapter image, pinned by digest",
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+(:[0-9]+)?/[a-z0-9._/-]+@sha256:[a-f0-9]{64}$"
+    },
+    "egress": {
+      "description": "Where the adapter may connect besides DNS",
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["port"],
+        "properties": {
+          "toNamespace": {"type": "string", "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$"},
+          "cidr": {"type": "string", "pattern": "^[0-9.]+/[0-9]{1,2}$"},
+          "port": {"type": "integer", "minimum": 1, "maximum": 65535}
+        },
+        "oneOf": [{"required": ["toNamespace"]}, {"required": ["cidr"]}]
+      }
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["client", "vault", "imagePullSecretKey", "flows", "resources"],
+      "properties": {
+        "client": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,30}$"},
+        "vault": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "server": {"type": "string"},
+            "path": {"type": "string"},
+            "authMount": {"type": "string"}
+          }
+        },
+        "imagePullSecretKey": {"type": "string"},
+        "flows": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "namespace": {"type": "string"},
+            "callers": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "resources": {"type": "object"}
+      }
+    }
+  }
+}

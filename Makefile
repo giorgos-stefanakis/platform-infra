@@ -123,3 +123,5 @@ lint:
 		helm lint components -f clusters/$$cluster/components.yaml --set repoURL=lint,revision=lint || exit 1; \
 	done
 	helm lint charts/flows --set images.backend=lint@sha256:0,images.web=lint@sha256:0
+	helm lint charts/flows-integration --set name=lint-v1,platform.client=lint \
+		--set image=ghcr.io/lint/lint@sha256:0000000000000000000000000000000000000000000000000000000000000000

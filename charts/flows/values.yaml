@@ -1,0 +1,92 @@
+# Images by digest: <registry>/<name>@sha256:<digest>. Built from satori-flows infra/edition/.
+images:
+  backend: ""
+  web: ""
+
+# Pull secret for a private registry, written from Vault by an ExternalSecret. Empty name skips it.
+imagePullSecret:
+  name: registry-pull
+  vaultKey: registry-pull # properties: server, username, password
+
+secretStore:
+  kind: ClusterSecretStore
+  name: vault
+
+# Vault keys of the generated secrets (kv v2 under the store's path).
+vault:
+  database: flows/database # properties: flows_password, jobs_password
+  auth: flows/auth # property: secret
+
+# The single public origin of the web app and the API. Production mode needs HTTPS.
+publicURL: http://localhost
+environment: development
+
+# Extra FLOWS_* settings for runtime.json. Every value must be a string. Do not put per-pod values here
+# (FLOWS_EXECUTOR_ID): runtime.json overrides the container environment.
+settings: {}
+
+# Operator allowlist of model providers. No provider by default.
+modelBindings: |
+  # Explicit operator bindings; no provider enabled by default.
+
+database:
+  namespace: flows-db
+  instances: 1
+  # The standard image carries pgvector (0.8.7, as the Flows edition pins) and pg_trgm.
+  image: ghcr.io/cloudnative-pg/postgresql:18-standard-trixie@sha256:1abcfd1cac6d53cda5185706819aab36d66a4ed88e99fc2ae44ab0826aa99f00
+  storageClass: openebs-hostpath
+  size: 5Gi
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {memory: 1Gi}
+
+# Filesystem blob store and the connection vault key on one ReadWriteOnce volume, shared by every backend pod.
+blobs:
+  storageClass: openebs-hostpath
+  size: 10Gi
+
+route:
+  hostname: localhost
+  gateway:
+    name: public
+    namespace: envoy-gateway-system
+    sectionName: http
+
+api:
+  resources:
+    requests: {cpu: 200m, memory: 512Mi}
+    limits: {memory: 3Gi}
+
+web:
+  replicas: 1
+  resources:
+    requests: {cpu: 20m, memory: 32Mi}
+    limits: {memory: 128Mi}
+
+workers:
+  indexing:
+    replicas: 1
+    terminationGracePeriodSeconds: 300
+    resources:
+      requests: {cpu: 100m, memory: 512Mi}
+      limits: {memory: 3Gi}
+  automation:
+    replicas: 1
+    terminationGracePeriodSeconds: 120
+    resources:
+      requests: {cpu: 100m, memory: 512Mi}
+      limits: {memory: 3Gi}
+  evaluations:
+    replicas: 1
+    terminationGracePeriodSeconds: 120
+    resources:
+      requests: {cpu: 50m, memory: 384Mi}
+      limits: {memory: 2Gi}
+
+networkPolicy:
+  # Integration services live in namespaces with this label. One rule for all of them, so adding an
+  # integration never changes Flows.
+  integrationNamespaceLabel: flows.satori/integration
+  integrationPort: 8080
+  # Model providers, OIDC and other HTTPS services outside the cluster.
+  externalPorts: [443]

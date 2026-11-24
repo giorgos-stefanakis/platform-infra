@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: blobs
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: {{ .Values.blobs.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.blobs.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flows-api
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: flows-api}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: flows-api
+        app.kubernetes.io/part-of: flows
+      annotations:
+        {{- include "flows.configChecksum" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 60
+      shareProcessNamespace: true
+      {{- include "flows.imagePullSecrets" . | nindent 6 }}
+      {{- include "flows.podSecurityContext" . | nindent 6 }}
+      {{- include "flows.blobsInit" . | nindent 6 }}
+      containers:
+        - name: api
+          image: {{ include "flows.backendImage" . }}
+          args: ["api"]
+          ports: [{name: http, containerPort: 8000}]
+          env:
+            - {name: FLOWS_EDITION_CONFIG, value: /config/runtime.json}
+          {{- include "flows.containerSecurityContext" . | nindent 10 }}
+          startupProbe:
+            httpGet: {path: /health/ready, port: http}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /health/ready, port: http}
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            exec: {command: [python, /app/scripts/edition/runtime.py, api-health]}
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+          {{- include "flows.backendMounts" . | nindent 10 }}
+      {{- include "flows.backendVolumes" . | nindent 6 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flows-api
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector: {app.kubernetes.io/name: flows-api}
+  ports: [{name: http, port: 8000, targetPort: http}]

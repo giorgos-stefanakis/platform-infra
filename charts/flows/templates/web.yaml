@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flows-web
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: flows-web}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: flows-web
+        app.kubernetes.io/part-of: flows
+    spec:
+      {{- include "flows.imagePullSecrets" . | nindent 6 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: web
+          image: {{ required "images.web is required" .Values.images.web }}
+          ports: [{name: http, containerPort: 8080}]
+          {{- include "flows.containerSecurityContext" . | nindent 10 }}
+          readinessProbe:
+            httpGet: {path: /edition-health, port: http}
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {medium: Memory, sizeLimit: 128Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flows-web
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector: {app.kubernetes.io/name: flows-web}
+  ports: [{name: http, port: 8080, targetPort: http}]

@@ -6,9 +6,12 @@ Infrastructure and GitOps definitions that run one application stack on clusters
 |---|---|---|
 | `kind` | A bare-metal client with no existing stack | Cilium, Envoy Gateway, OpenEBS, SeaweedFS, HashiCorp Vault |
 | `aks` | A client with its own AKS stack | Traefik, cert-manager; AKS provides Cilium, storage, Blob and Key Vault |
+| `kind-flows` | Flows and customer integrations for the client Acme, on one node | Cilium, Envoy Gateway, OpenEBS, HashiCorp Vault |
 
-Both clusters run the same application platform (External Secrets Operator, CloudNativePG, RabbitMQ Cluster Operator)
-and the same application chart. Only the values in `clusters/<cluster>/` differ.
+`kind` and `aks` run the same application platform (External Secrets Operator, CloudNativePG, RabbitMQ Cluster
+Operator) and the same application chart. Only the values in `clusters/<cluster>/` differ. `kind-flows` runs Flows
+from the `flows` chart in this repository, with values from the client's GitOps repository (see
+[kind-flows](#kind-flows)).
 
 ## Layout
 
@@ -18,10 +21,12 @@ iac/
   state/               Terraform state storage; local state, applied once
   shared/              Entra ID app registration, container registry, managed identities
   kind/                kind cluster, then the bootstrap module
+  kind-flows/          one-node kind cluster for Flows, then the bootstrap module
   aks/                 Azure resources and AKS, then the bootstrap module
 clusters/<cluster>/    components to install, their values, application values
 clusters/aks/client/   infrastructure the AKS client brings itself: Traefik, cert-manager, Key Vault secret store
 components/<name>/     one Argo CD Application per component, upstream chart pinned
+charts/flows/          Flows on Kubernetes, from the reference manifests of the Flows Kubernetes guide
 ```
 
 Terraform owns everything up to and including Argo CD and the root Application. Argo CD owns everything after it.
@@ -61,6 +66,41 @@ controller to retry at once:
 ```sh
 kubectl --context kind-demo -n external-secrets rollout restart deploy/external-secrets
 ```
+
+### kind-flows
+
+Flows for the client Acme on one kind node, delivered by Argo CD from two repositories: the components and the
+`flows` chart from this one, and the client's objects and values from
+[client-acme-gitops](https://github.com/giorgos-stefanakis/client-acme-gitops) (`argocd/`). The `kind` cluster also
+maps host port 80, so run only one of the two at a time.
+
+```sh
+make kind-flows-up     # create the cluster, install Cilium, Argo CD and the root Application, then seed Vault
+make kind-flows-seed   # unseal Vault again after a restart
+make kind-flows-down   # remove all of it
+```
+
+`FLOWS_REVISION` and `FLOWS_CLIENT_REVISION` choose the branches Argo CD syncs (default `main`).
+
+`kind-flows-seed` generates the database passwords (`flows/database`) and the session secret (`flows/auth`) in Vault,
+and writes the GitHub CLI token as the GHCR pull credential (`registry-pull`): the Flows images are private packages,
+and the token needs `read:packages`.
+
+The `flows` chart follows the reference manifests of the Flows guide *Deploying Flows on Kubernetes* (satori-flows
+`docs/architecture/kubernetes.md`), with these choices:
+
+- CloudNativePG runs PostgreSQL 18 in namespace `flows-db`. Its standard image carries pgvector. Bootstrap creates
+  `flows` and the `vector` extension; a managed role and a `Database` create `flows_jobs`.
+- The blob store and the connection vault key are on one ReadWriteOnce volume, mounted by every backend pod on the
+  one node.
+- `runtime.json` is rendered by an ExternalSecret from the chart's settings and the Vault values.
+- The migrate Job is an Argo CD Sync hook in wave 3, after the database (waves 1 and 2) and before the workloads
+  (wave 4). A PreSync hook would run before the database exists on the first install.
+- Envoy Gateway routes `/api`, `/auth`, `/health` and `/v1` to the API and the rest to the web image.
+- `default-deny` and `allow-flows` NetworkPolicies, plus one egress rule to every namespace labelled
+  `flows.satori/integration: "true"`, so adding an integration never changes Flows.
+- Sign-in uses local accounts in development mode at `http://localhost`. Guest login does not work in a cluster:
+  Flows admits it only from a loopback client address, and the edition entrypoint refuses it.
 
 ### Azure
 

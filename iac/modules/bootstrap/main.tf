@@ -26,7 +26,16 @@ locals {
     }
   ]
 
-  root_sources = concat([local.components_source], local.client_sources)
+  # A directory of Argo CD objects in the client's own GitOps repository.
+  client_repo_sources = [
+    for repo in(var.root_application.client_repo == null ? [] : [var.root_application.client_repo]) : {
+      repoURL        = repo.repo_url
+      targetRevision = repo.revision
+      path           = repo.path
+    }
+  ]
+
+  root_sources = concat([local.components_source], local.client_sources, local.client_repo_sources)
 }
 
 resource "helm_release" "cilium" {

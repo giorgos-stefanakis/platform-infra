@@ -6,11 +6,13 @@ endif
 
 KIND_CLUSTER_DIR   := iac/kind/cluster
 KIND_BOOTSTRAP_DIR := iac/kind/bootstrap
+FLOWS_CLUSTER_DIR   := iac/kind-flows/cluster
+FLOWS_BOOTSTRAP_DIR := iac/kind-flows/bootstrap
 STATE_DIR          := iac/state
 SHARED_DIR         := iac/shared
 AKS_CLUSTER_DIR    := iac/aks/cluster
 AKS_BOOTSTRAP_DIR  := iac/aks/bootstrap
-TERRAFORM_ROOTS    := $(KIND_CLUSTER_DIR) $(KIND_BOOTSTRAP_DIR) $(STATE_DIR) $(SHARED_DIR) $(AKS_CLUSTER_DIR) $(AKS_BOOTSTRAP_DIR)
+TERRAFORM_ROOTS    := $(KIND_CLUSTER_DIR) $(KIND_BOOTSTRAP_DIR) $(FLOWS_CLUSTER_DIR) $(FLOWS_BOOTSTRAP_DIR) $(STATE_DIR) $(SHARED_DIR) $(AKS_CLUSTER_DIR) $(AKS_BOOTSTRAP_DIR)
 
 AKS_NAME           := aks-demo
 AKS_RESOURCE_GROUP := rg-demo-aks
@@ -33,7 +35,7 @@ remote_init = terraform -chdir=$(1) init -input=false -reconfigure \
 	-backend-config=key=$(2).tfstate \
 	-backend-config=use_azuread_auth=true
 
-.PHONY: kind-up kind-seed kind-down state-up shared-up aks-up aks-stop aks-start aks-down lint
+.PHONY: kind-up kind-seed kind-down kind-flows-up kind-flows-seed kind-flows-downstate-up shared-up aks-up aks-stop aks-start aks-down lint
 
 # kind
 
@@ -52,6 +54,32 @@ kind-seed:
 kind-down:
 	$(GIT_TOKEN_ENV) terraform -chdir=$(KIND_BOOTSTRAP_DIR) $(TF_DESTROY)
 	terraform -chdir=$(KIND_CLUSTER_DIR) $(TF_DESTROY)
+
+# kind-flows: Flows and customer integrations on one node
+
+# Branches of platform-infra and the client GitOps repository that Argo CD syncs.
+FLOWS_REVISION        ?= main
+FLOWS_CLIENT_REVISION ?= main
+
+kind-flows-up:
+	terraform -chdir=$(FLOWS_CLUSTER_DIR) init -input=false
+	terraform -chdir=$(FLOWS_CLUSTER_DIR) $(TF_APPLY)
+	terraform -chdir=$(FLOWS_BOOTSTRAP_DIR) init -input=false
+	$(GIT_TOKEN_ENV) TF_VAR_git_revision=$(FLOWS_REVISION) TF_VAR_client_revision=$(FLOWS_CLIENT_REVISION) \
+		terraform -chdir=$(FLOWS_BOOTSTRAP_DIR) $(TF_APPLY)
+	$(MAKE) kind-flows-seed
+
+# The images are private GHCR packages; the cluster pulls them with the GitHub CLI token (read:packages).
+kind-flows-seed:
+	KUBE_CONTEXT=kind-flows SEED_PROFILE=flows \
+	REGISTRY_SERVER=ghcr.io \
+	REGISTRY_PULL_USERNAME="$$(gh api user --jq .login)" \
+	REGISTRY_PULL_PASSWORD="$$(gh auth token)" \
+		scripts/kind-seed.sh
+
+kind-flows-down:
+	$(GIT_TOKEN_ENV) terraform -chdir=$(FLOWS_BOOTSTRAP_DIR) $(TF_DESTROY)
+	terraform -chdir=$(FLOWS_CLUSTER_DIR) $(TF_DESTROY)
 
 # Azure
 
@@ -91,6 +119,7 @@ lint:
 	done
 	tflint --init
 	tflint --recursive
-	for cluster in kind aks; do \
+	for cluster in kind kind-flows aks; do \
 		helm lint components -f clusters/$$cluster/components.yaml --set repoURL=lint,revision=lint || exit 1; \
 	done
+	helm lint charts/flows --set images.backend=lint@sha256:0,images.web=lint@sha256:0

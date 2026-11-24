@@ -1,0 +1,13 @@
+cluster: kind-flows
+
+# Flows on one kind node. The Flows Application itself and the integrations come from the client's GitOps
+# repository (see iac/kind-flows/bootstrap). Flows queues its work in PostgreSQL and uses the filesystem blob
+# store, so there is no RabbitMQ or SeaweedFS here.
+components:
+  # Infrastructure
+  - openebs
+  - envoy-gateway
+  - vault
+  # Application platform
+  - external-secrets
+  - cloudnative-pg

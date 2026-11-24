@@ -20,7 +20,8 @@ variable "git_credentials" {
 variable "root_application" {
   description = <<-EOT
     Repository and revision of the root Application, the cluster whose component list it renders, the repository of
-    the application chart, and an optional directory of infrastructure the client cluster brings itself.
+    the application chart, an optional directory of infrastructure the client cluster brings itself, and an optional
+    directory of Argo CD objects in the client's own GitOps repository.
   EOT
   type = object({
     repo_url     = string
@@ -28,5 +29,10 @@ variable "root_application" {
     cluster      = string
     app_repo_url = string
     client_path  = optional(string)
+    client_repo = optional(object({
+      repo_url = string
+      revision = string
+      path     = string
+    }))
   })
 }

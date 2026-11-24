@@ -1,0 +1,45 @@
+# PostgreSQL 18 with pgvector: database flows owned by flows, database flows_jobs owned by flows_jobs.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: flows-db
+  namespace: {{ .Values.database.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  instances: {{ .Values.database.instances }}
+  imageName: {{ .Values.database.image }}
+  storage:
+    storageClass: {{ .Values.database.storageClass }}
+    size: {{ .Values.database.size }}
+  resources:
+    {{- toYaml .Values.database.resources | nindent 4 }}
+  bootstrap:
+    initdb:
+      database: flows
+      owner: flows
+      secret:
+        name: flows-db-flows
+      # The vector extension must exist before the Flows migrations, and only a superuser can create it.
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector
+  managed:
+    roles:
+      - name: flows_jobs
+        ensure: present
+        login: true
+        passwordSecret:
+          name: flows-db-flows-jobs
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: flows-jobs
+  namespace: {{ .Values.database.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  name: flows_jobs
+  owner: flows_jobs
+  cluster:
+    name: flows-db

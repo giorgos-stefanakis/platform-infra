@@ -1,0 +1,52 @@
+{{- range $name, $worker := .Values.workers }}
+---
+# FLOWS_EXECUTOR_ID comes from the stable pod name, so a restarted pod recovers its own DBOS workflows.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: flows-{{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  serviceName: flows-{{ $name }}
+  replicas: {{ $worker.replicas }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: flows-{{ $name }}}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: flows-{{ $name }}
+        app.kubernetes.io/part-of: flows
+      annotations:
+        {{- include "flows.configChecksum" $ | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: {{ $worker.terminationGracePeriodSeconds }}
+      shareProcessNamespace: true
+      {{- include "flows.imagePullSecrets" $ | nindent 6 }}
+      {{- include "flows.podSecurityContext" $ | nindent 6 }}
+      {{- include "flows.blobsInit" $ | nindent 6 }}
+      containers:
+        - name: worker
+          image: {{ include "flows.backendImage" $ }}
+          args: [{{ $name | quote }}]
+          env:
+            - {name: FLOWS_EDITION_CONFIG, value: /config/runtime.json}
+            - name: FLOWS_EXECUTOR_ID
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+          {{- include "flows.containerSecurityContext" $ | nindent 10 }}
+          startupProbe:
+            exec: {command: [python, /app/scripts/edition/runtime.py, health]}
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 20
+          livenessProbe:
+            exec: {command: [python, /app/scripts/edition/runtime.py, health]}
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 8
+          resources:
+            {{- toYaml $worker.resources | nindent 12 }}
+          {{- include "flows.backendMounts" $ | nindent 10 }}
+      {{- include "flows.backendVolumes" $ | nindent 6 }}
+{{- end }}

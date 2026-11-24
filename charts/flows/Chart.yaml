@@ -1,0 +1,8 @@
+apiVersion: v2
+name: flows
+description: >-
+  Flows on Kubernetes, following the reference manifests of the Flows guide "Deploying Flows on Kubernetes"
+  (satori-flows docs/architecture/kubernetes.md): one backend image for the API and the workers, the web image, a
+  migrate Job, a CloudNativePG database, the filesystem blob store on one volume, and default-deny network policies.
+type: application
+version: 0.1.0

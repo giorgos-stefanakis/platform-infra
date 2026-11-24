@@ -2,10 +2,11 @@
 # Initialises and unseals Vault on the kind cluster, lets External Secrets Operator read it, and writes generated
 # secret values. Safe to run again: it unseals after a restart and keeps existing values.
 # REGISTRY_SERVER, REGISTRY_PULL_USERNAME and REGISTRY_PULL_PASSWORD, when set, are written as the registry pull
-# credentials.
+# credentials. SEED_PROFILE picks the generated values: demo (the kind cluster) or flows (the kind-flows cluster).
 set -euo pipefail
 
 context="${KUBE_CONTEXT:-kind-demo}"
+profile="${SEED_PROFILE:-demo}"
 namespace="vault"
 pod="vault-0"
 init_secret="vault-init"
@@ -97,9 +98,21 @@ vault_exec write auth/kubernetes/role/external-secrets \
   policies=external-secrets \
   ttl=1h >/dev/null
 
-put_if_missing demo-api-key value="$(openssl rand -hex 24)"
-put_if_missing object-store access_key_id="$(openssl rand -hex 10)" secret_access_key="$(openssl rand -hex 20)"
-put_if_missing object-store-admin username=admin password="$(openssl rand -hex 16)"
+case "$profile" in
+  demo)
+    put_if_missing demo-api-key value="$(openssl rand -hex 24)"
+    put_if_missing object-store access_key_id="$(openssl rand -hex 10)" secret_access_key="$(openssl rand -hex 20)"
+    put_if_missing object-store-admin username=admin password="$(openssl rand -hex 16)"
+    ;;
+  flows)
+    put_if_missing flows/database flows_password="$(openssl rand -hex 24)" jobs_password="$(openssl rand -hex 24)"
+    put_if_missing flows/auth secret="$(openssl rand -hex 32)"
+    ;;
+  *)
+    echo "Unknown SEED_PROFILE $profile" >&2
+    exit 1
+    ;;
+esac
 
 if [[ -n "${REGISTRY_SERVER:-}" && -n "${REGISTRY_PULL_USERNAME:-}" && -n "${REGISTRY_PULL_PASSWORD:-}" ]]; then
   vault_exec kv put secret/registry-pull \

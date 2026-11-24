@@ -30,6 +30,10 @@ spec:
           volumeMounts:
             - {name: config, mountPath: /config, readOnly: true}
             - {name: tmp, mountPath: /tmp}
+            # The jobs-schema step builds a blob store, which creates its directories but writes no blob. The real
+            # volume binds only when the workloads (wave 4) start, so the migration gets throwaway directories.
+            - {name: data, mountPath: /data}
+            - {name: scratch, mountPath: /scratch}
       volumes:
         - name: config
           secret:
@@ -37,3 +41,7 @@ spec:
             defaultMode: 0440
         - name: tmp
           emptyDir: {medium: Memory, sizeLimit: 1Gi}
+        - name: data
+          emptyDir: {sizeLimit: 64Mi}
+        - name: scratch
+          emptyDir: {sizeLimit: 64Mi}

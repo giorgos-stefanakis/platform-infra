@@ -95,7 +95,10 @@ The `flows` chart follows the reference manifests of the Flows guide *Deploying 
   one node.
 - `runtime.json` is rendered by an ExternalSecret from the chart's settings and the Vault values.
 - The migrate Job is an Argo CD Sync hook in wave 3, after the database (waves 1 and 2) and before the workloads
-  (wave 4). A PreSync hook would run before the database exists on the first install.
+  (wave 4). A PreSync hook would run before the database exists on the first install. Its jobs-schema step builds a
+  blob store, so it gets throwaway `/data` and `/scratch` directories; the blob volume binds only with the workloads.
+- Every Flows pod sets `enableServiceLinks: false`. Otherwise Kubernetes adds variables such as `FLOWS_API_PORT` for
+  the `flows-api` Service, which Flows reads as settings and rejects (`Invalid settings: api_port`).
 - Envoy Gateway routes `/api`, `/auth`, `/health` and `/v1` to the API and the rest to the web image.
 - `default-deny` and `allow-flows` NetworkPolicies, plus one egress rule to every namespace labelled
   `flows.satori/integration: "true"`, so adding an integration never changes Flows.
